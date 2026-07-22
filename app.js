@@ -727,7 +727,16 @@ function formatRupiah(num) {
 
 // --- ADMIN SESSION CONTROLLERS ---
 
-function handleLogin(e) {
+window.openLoginModal = function() {
+    document.getElementById("loginForm").reset();
+    document.getElementById("loginModal").showModal();
+};
+
+window.closeLoginModal = function() {
+    document.getElementById("loginModal").close();
+};
+
+window.handleLogin = function(e) {
     e.preventDefault();
     const enteredPass = document.getElementById("loginPassword").value;
 
@@ -735,7 +744,7 @@ function handleLogin(e) {
         isAdmin = true;
         sessionStorage.setItem("dkm_is_admin", "true");
         toggleAdminUI();
-        closeLoginModal();
+        window.closeLoginModal();
         
         // Re-render layout
         if (currentKasTab === "utama") {
@@ -749,9 +758,9 @@ function handleLogin(e) {
     } else {
         showAlert("Kata sandi salah! Akses ditolak.", "error");
     }
-}
+};
 
-function handleLogout() {
+window.handleLogout = function() {
     isAdmin = false;
     sessionStorage.removeItem("dkm_is_admin");
     toggleAdminUI();
@@ -765,12 +774,12 @@ function handleLogout() {
         renderSpecialCashGrid();
     }
     showAlert("Anda telah keluar dari Mode Admin.", "info");
-}
+};
 
 
 // ==================== RENDERING ENGINE: KAS UTAMA ====================
 
-function applyFilters() {
+window.applyFilters = function() {
     if (currentKasTab !== "utama") return;
 
     const searchQuery = document.getElementById("filterSearchUtama").value.toLowerCase().trim();
@@ -819,7 +828,7 @@ function applyFilters() {
     renderKPIsUtama();
     renderTableUtama();
     renderChartsUtama();
-}
+};
 
 function renderKPIsUtama() {
     const tabCategories = categories.filter(c => c.type === "utama").map(c => c.name);
