@@ -1,10 +1,17 @@
 // --- GLOBAL CONFIGURATIONS ---
 const CONFIG = {
-    // === KONFIGURASI SUPABASE (ONLINE MODE) ===
-    // Masukkan URL dan Anon Key Supabase Anda di bawah ini untuk mengaktifkan database online.
-    // Jika dibiarkan kosong (""), aplikasi otomatis berjalan 100% Offline menggunakan LocalStorage browser.
-    SUPABASE_URL: "",
-    SUPABASE_ANON_KEY: "",
+    // === KONFIGURASI FIREBASE (ONLINE DATABASE) ===
+    // Isi objek di bawah ini dengan konfigurasi dari Firebase Console Anda (Project Settings -> Web App).
+    // Jika apiKey dikosongkan (""), aplikasi otomatis berjalan 100% Offline menggunakan LocalStorage browser.
+    FIREBASE_CONFIG: {
+        apiKey: "AIzaSyDc6dKeK07nmylIv5eYbCBHsFziIENJl1k",
+        authDomain: "dkmsa-4bfae.firebaseapp.com",
+        databaseURL: "https://dkmsa-4bfae-default-rtdb.asia-southeast1.firebasedatabase.app", // URL Realtime Database (e.g., https://dkm-masjid-default-rtdb.firebaseio.com)
+        projectId: "dkmsa-4bfae",
+        storageBucket: "dkmsa-4bfae.firebasestorage.app",
+        messagingSenderId: "236798785538",
+        appId: "1:236798785538:web:1e2618df8f8bb7edb20f1b"
+    },
     
     // === KATA SANDI / PASSWORD ADMIN ===
     // Digunakan oleh bendahara untuk masuk ke mode admin agar bisa menambah/mengubah data keuangan.
@@ -56,7 +63,7 @@ let activeDetailTxId = null; // ID transaksi yang sedang dibuka detail modallnya
 
 // Database Connection Info
 let isOnlineMode = false;
-let supabaseClient = null;
+let firebaseDatabase = null;
 
 // Visual Chart Instances (to prevent overlap)
 let monthlyChartInstanceUtama = null;
@@ -76,7 +83,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     isAdmin = sessionStorage.getItem("dkm_is_admin") === "true";
 
     // 2. Setup Database Connection Mode
-    checkDatabaseConnection();
+    initializeFirebaseConnection();
 
     // 3. Load All Data (Async if online)
     await loadData();
@@ -94,21 +101,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 });
 
 // Set state depending on config keys presence
-function checkDatabaseConnection() {
+function initializeFirebaseConnection() {
     const dbBadge = document.getElementById("badgeDbMode");
     
-    if (CONFIG.SUPABASE_URL && CONFIG.SUPABASE_ANON_KEY) {
+    if (CONFIG.FIREBASE_CONFIG && CONFIG.FIREBASE_CONFIG.apiKey) {
         try {
-            // Initialize Supabase Client
-            supabaseClient = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+            // Initialize Firebase App & Database compatibility
+            firebase.initializeApp(CONFIG.FIREBASE_CONFIG);
+            firebaseDatabase = firebase.database();
             isOnlineMode = true;
             
             if (dbBadge) {
-                dbBadge.innerText = "Online (Supabase)";
+                dbBadge.innerText = "Online (Firebase)";
                 dbBadge.className = "badge badge-success text-[9px] font-bold px-1.5 py-1 border-0 uppercase text-white";
             }
         } catch (err) {
-            console.error("Supabase Initialization Error:", err);
+            console.error("Firebase Initialization Error:", err);
             isOnlineMode = false;
         }
     }
@@ -123,7 +131,7 @@ function checkDatabaseConnection() {
 function migrateCategories(savedCats) {
     if (!savedCats) return [...DEFAULT_CATEGORIES];
     try {
-        const parsed = JSON.parse(savedCats);
+        const parsed = typeof savedCats === 'string' ? JSON.parse(savedCats) : savedCats;
         if (!Array.isArray(parsed) || parsed.length === 0) return [...DEFAULT_CATEGORIES];
         
         // If it's already an array of objects containing 'type'
@@ -158,53 +166,51 @@ function migrateCategories(savedCats) {
     }
 }
 
-// Load data from Supabase or LocalStorage fallback
+// Load data from Firebase or LocalStorage fallback
 async function loadData() {
-    if (isOnlineMode && supabaseClient) {
+    if (isOnlineMode && firebaseDatabase) {
         try {
-            console.log("Loading data dari cloud database Supabase...");
+            console.log("Loading data dari cloud database Firebase...");
 
-            // A. Fetch config values
-            const { data: configData, error: configErr } = await supabaseClient
-                .from("dkm_config")
-                .select("*");
-
-            if (configErr) throw configErr;
-
-            // Extract categories
-            const catRow = configData.find(r => r.key === "categories");
-            if (catRow && Array.isArray(catRow.value)) {
-                categories = migrateCategories(JSON.stringify(catRow.value));
-            } else {
-                categories = [...DEFAULT_CATEGORIES];
-                await saveConfigToSupabase("categories", categories);
-            }
-
-            // Extract settings
-            const settingsRow = configData.find(r => r.key === "settings");
-            if (settingsRow && typeof settingsRow.value === "object") {
-                settings = settingsRow.value;
+            // A. Load Settings
+            const settingsSnap = await firebaseDatabase.ref("dkm_settings").once("value");
+            if (settingsSnap.exists()) {
+                settings = settingsSnap.val();
             } else {
                 settings = { ...DEFAULT_SETTINGS };
-                await saveConfigToSupabase("settings", settings);
+                await firebaseDatabase.ref("dkm_settings").set(settings);
             }
 
-            // B. Fetch transactions list
-            const { data: txData, error: txErr } = await supabaseClient
-                .from("dkm_transactions")
-                .select("*");
+            // B. Load Categories
+            const categoriesSnap = await firebaseDatabase.ref("dkm_categories").once("value");
+            if (categoriesSnap.exists()) {
+                categories = migrateCategories(categoriesSnap.val());
+            } else {
+                categories = [...DEFAULT_CATEGORIES];
+                await firebaseDatabase.ref("dkm_categories").set(categories);
+            }
 
-            if (txErr) throw txErr;
-
-            if (txData && txData.length > 0) {
-                transactions = txData;
+            // C. Load Transactions
+            const transactionsSnap = await firebaseDatabase.ref("dkm_transactions").once("value");
+            if (transactionsSnap.exists()) {
+                const val = transactionsSnap.val();
+                if (val) {
+                    transactions = Array.isArray(val) ? val : Object.values(val);
+                } else {
+                    transactions = [];
+                }
+                
+                // Ensure image field is initialized
+                transactions.forEach(t => {
+                    if (!('image' in t)) t.image = null;
+                });
             } else {
                 transactions = [...DEFAULT_TRANSACTIONS];
-                await seedTransactionsToSupabase();
+                await firebaseDatabase.ref("dkm_transactions").set(transactions);
             }
 
         } catch (error) {
-            console.error("Gagal menyambungkan ke Supabase. Menggunakan data Lokal:", error);
+            console.error("Gagal menyambungkan ke Firebase. Menggunakan data Lokal:", error);
             isOnlineMode = false;
             const dbBadge = document.getElementById("badgeDbMode");
             if (dbBadge) {
@@ -244,33 +250,24 @@ function loadLocalStorageData() {
     }
 }
 
-// Save config to online DB
-async function saveConfigToSupabase(key, value) {
-    if (!isOnlineMode || !supabaseClient) return;
-    try {
-        const { error } = await supabaseClient
-            .from("dkm_config")
-            .upsert({ key: key, value: value }, { onConflict: "key" });
-        if (error) throw error;
-    } catch (e) {
-        console.error(`Gagal menyimpan konfigurasi '${key}' ke Supabase:`, e);
+// Sync all local state values into Firebase cloud (or local storage fallback)
+async function syncData() {
+    if (isOnlineMode && firebaseDatabase) {
+        try {
+            await firebaseDatabase.ref("dkm_transactions").set(transactions);
+            await firebaseDatabase.ref("dkm_categories").set(categories);
+            await firebaseDatabase.ref("dkm_settings").set(settings);
+        } catch (err) {
+            console.error("Gagal sinkronisasi data online ke Firebase:", err);
+            showAlert("Gagal sinkronisasi cloud: " + err.message, "error");
+            saveStateToLocalStorage();
+        }
+    } else {
+        saveStateToLocalStorage();
     }
 }
 
-// Seed default items to online DB
-async function seedTransactionsToSupabase() {
-    if (!isOnlineMode || !supabaseClient) return;
-    try {
-        const { error } = await supabaseClient
-            .from("dkm_transactions")
-            .insert(DEFAULT_TRANSACTIONS);
-        if (error) throw error;
-    } catch (e) {
-        console.error("Gagal melakukan seed transaksi ke Supabase:", e);
-    }
-}
-
-// Save current local state to local storage (used in local storage mode or as backup)
+// Save current local state to local storage (for offline backups)
 function saveStateToLocalStorage() {
     localStorage.setItem("dkm_transactions", JSON.stringify(transactions));
     localStorage.setItem("dkm_categories", JSON.stringify(categories));
@@ -1543,21 +1540,7 @@ window.saveTransaction = async function(e) {
         
         if (index !== -1) {
             transactions[index] = updatedTx;
-            
-            if (isOnlineMode && supabaseClient) {
-                try {
-                    const { error } = await supabaseClient
-                        .from("dkm_transactions")
-                        .update(updatedTx)
-                        .eq("id", id);
-                    if (error) throw error;
-                } catch (err) {
-                    showAlert("Gagal sinkronisasi cloud: " + err.message, "error");
-                    saveStateToLocalStorage();
-                }
-            } else {
-                saveStateToLocalStorage();
-            }
+            await syncData();
             showAlert("Transaksi berhasil diperbarui.");
         }
     } else {
@@ -1565,20 +1548,7 @@ window.saveTransaction = async function(e) {
         const newId = "tx-" + Date.now() + Math.random().toString(36).substr(2, 4);
         updatedTx = { id: newId, date, category, desc, type, amount, image: tempSelectedImageBase64 };
         transactions.push(updatedTx);
-
-        if (isOnlineMode && supabaseClient) {
-            try {
-                const { error } = await supabaseClient
-                    .from("dkm_transactions")
-                    .insert([updatedTx]);
-                if (error) throw error;
-            } catch (err) {
-                showAlert("Gagal sinkronisasi cloud: " + err.message, "error");
-                saveStateToLocalStorage();
-            }
-        } else {
-            saveStateToLocalStorage();
-        }
+        await syncData();
         showAlert("Transaksi baru berhasil ditambahkan.");
     }
 
@@ -1612,22 +1582,7 @@ window.deleteTransaction = async function(id) {
 
     if (confirm("Apakah Anda yakin ingin menghapus transaksi ini?")) {
         transactions = transactions.filter(t => t.id !== id);
-
-        if (isOnlineMode && supabaseClient) {
-            try {
-                const { error } = await supabaseClient
-                    .from("dkm_transactions")
-                    .delete()
-                    .eq("id", id);
-                if (error) throw error;
-            } catch (err) {
-                showAlert("Gagal menghapus di cloud: " + err.message, "error");
-                saveStateToLocalStorage();
-            }
-        } else {
-            saveStateToLocalStorage();
-        }
-
+        await syncData();
         populateYearFilter();
         
         // Refresh active layouts
@@ -1689,12 +1644,7 @@ window.saveSettings = async function() {
         nameBendahara: nameB
     };
 
-    if (isOnlineMode && supabaseClient) {
-        await saveConfigToSupabase("settings", settings);
-    } else {
-        saveStateToLocalStorage();
-    }
-
+    await syncData();
     initializeUI();
     
     // Refresh filter UI
@@ -1773,11 +1723,7 @@ window.addCategory = async function() {
     const newCat = { name: val, type: catType };
     categories.push(newCat);
 
-    if (isOnlineMode && supabaseClient) {
-        await saveConfigToSupabase("categories", categories);
-    } else {
-        saveStateToLocalStorage();
-    }
+    await syncData();
     
     newCatInput.value = "";
     renderSettingsCategories();
@@ -1800,12 +1746,7 @@ window.deleteCategory = async function(index) {
     const catName = categories[index].name;
     if (confirm(`Apakah Anda yakin ingin menghapus kategori "${catName}"?`)) {
         categories.splice(index, 1);
-
-        if (isOnlineMode && supabaseClient) {
-            await saveConfigToSupabase("categories", categories);
-        } else {
-            saveStateToLocalStorage();
-        }
+        await syncData();
 
         renderSettingsCategories();
         populateCategoryDropdowns();
@@ -1918,30 +1859,8 @@ window.importDataJSON = async function() {
             categories = migrateCategories(JSON.stringify(data.categories));
             settings = data.settings;
 
-            // Sync Database
-            if (isOnlineMode && supabaseClient) {
-                // A. Save config
-                await saveConfigToSupabase("categories", categories);
-                await saveConfigToSupabase("settings", settings);
-
-                // B. Re-sync transactions (Clear and Bulk reinsert)
-                console.log("Menghapus data lama di cloud untuk pemulihan...");
-                const { error: delErr = null } = await supabaseClient
-                    .from("dkm_transactions")
-                    .delete()
-                    .neq("id", "keep_empty"); // Delete all
-
-                if (delErr) throw delErr;
-
-                console.log("Mengunggah data pemulihan baru ke cloud...");
-                const { error: insErr = null } = await supabaseClient
-                    .from("dkm_transactions")
-                    .insert(transactions);
-
-                if (insErr) throw insErr;
-            } else {
-                saveStateToLocalStorage();
-            }
+            // Sync Database (Directly atomic to Firebase cloud!)
+            await syncData();
 
             initializeUI();
             
@@ -1970,14 +1889,14 @@ window.resetData = async function() {
 
     if (confirm("PERINGATAN: Semua data transaksi dan pengaturan akan dihapus dan dikembalikan ke bawaan pabrik. Tindakan ini tidak dapat dibatalkan! Apakah Anda yakin?")) {
         
-        if (isOnlineMode && supabaseClient) {
+        if (isOnlineMode && firebaseDatabase) {
             try {
-                // Clear transactions
-                await supabaseClient.from("dkm_transactions").delete().neq("id", "keep_empty");
-                // Clear config
-                await supabaseClient.from("dkm_config").delete().neq("key", "keep_empty");
+                // Clear Firebase refs
+                await firebaseDatabase.ref("dkm_transactions").remove();
+                await firebaseDatabase.ref("dkm_categories").remove();
+                await firebaseDatabase.ref("dkm_settings").remove();
             } catch (err) {
-                console.error("Gagal membersihkan cloud:", err);
+                console.error("Gagal membersihkan Firebase:", err);
             }
         }
 
