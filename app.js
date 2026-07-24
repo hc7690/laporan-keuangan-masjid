@@ -15,7 +15,7 @@ const CONFIG = {
     
     // === KATA SANDI / PASSWORD ADMIN ===
     // Digunakan oleh bendahara untuk masuk ke mode admin agar bisa menambah/mengubah data keuangan.
-    ADMIN_PASSWORD: "masjid-alfalah"
+    ADMIN_PASSWORD: "assyaamisii"
 };
 
 // --- DEFAULT SYSTEM VALUES ---
