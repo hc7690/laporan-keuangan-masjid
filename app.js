@@ -1520,6 +1520,7 @@ window.closeTransactionModal = function() {
 };
 
 window.saveTransaction = async function(e) {
+try {
     e.preventDefault();
 
     if (!isAdmin) {
@@ -1570,6 +1571,8 @@ window.saveTransaction = async function(e) {
     }
     
     closeTransactionModal();
+
+} catch(err){ console.error(err); showAlert(err.message||'Terjadi kesalahan','error'); }
 };
 
 window.editTransaction = function(id) {
@@ -1638,31 +1641,24 @@ window.switchTab = function(tabId) {
 window.saveSettings = async function() {
     if (!isAdmin) return;
 
-    const masjid = document.getElementById("cfgMasjidName").value.trim() || "Masjid Al-Falah";
-    const titleK = document.getElementById("cfgTitleKetua").value.trim() || "Ketua DKM Masjid";
-    const nameK = document.getElementById("cfgNameKetua").value.trim() || "Nama Ketua";
-    const titleB = document.getElementById("cfgTitleBendahara").value.trim() || "Bendahara DKM";
-    const nameB = document.getElementById("cfgNameBendahara").value.trim() || "Nama Bendahara";
-
     settings = {
-        masjidName: masjid,
-        titleKetua: titleK,
-        nameKetua: nameK,
-        titleBendahara: titleB,
-        nameBendahara: nameB
+        ...settings,
+        masjidName: document.getElementById("cfgMasjidName").value.trim() || settings.masjidName,
+        city: document.getElementById("cfgCity") ? document.getElementById("cfgCity").value.trim() : (settings.city || "Bekasi"),
+        titleKetua: document.getElementById("cfgTitleKetua").value.trim() || settings.titleKetua,
+        nameKetua: document.getElementById("cfgNameKetua").value.trim() || settings.nameKetua,
+        titleBendahara: document.getElementById("cfgTitleBendahara").value.trim() || settings.titleBendahara,
+        nameBendahara: document.getElementById("cfgNameBendahara").value.trim() || settings.nameBendahara
     };
 
     await syncData();
     initializeUI();
-    
-    // Refresh filter UI
-    if (currentKasTab === "utama") {
-        applyFilters();
-    } else if (activeKhususCategory) {
-        applyFiltersKhusus();
-    }
-    showAlert("Pengaturan sistem berhasil disimpan.");
+
+    if (currentKasTab === "utama") applyFilters();
+    else if (activeKhususCategory) applyFiltersKhusus();
+
     closeSettingsModal();
+    showAlert("Pengaturan sistem berhasil disimpan.");
 };
 
 function renderSettingsCategories() {
