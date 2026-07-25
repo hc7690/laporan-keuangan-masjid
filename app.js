@@ -1570,6 +1570,7 @@ try {
         applyFiltersKhusus();
     }
     
+    initializeUI();
     closeTransactionModal();
 
 } catch(err){ console.error(err); showAlert(err.message||'Terjadi kesalahan','error'); }
