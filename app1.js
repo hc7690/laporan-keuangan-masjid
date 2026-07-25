@@ -31,18 +31,10 @@ const DEFAULT_CATEGORIES = [
 
 const DEFAULT_SETTINGS = {
     masjidName: "Masjid Al-Falah",
-    address: "",
-    city: "Bekasi",
-    phone: "",
-    email: "",
-    website: "",
     titleKetua: "Ketua DKM Masjid",
     nameKetua: "H. Ahmad Fauzi, M.Ag.",
     titleBendahara: "Bendahara DKM",
-    nameBendahara: "H. Mulyadi, S.E.",
-    logo: "",
-    signKetua: "",
-    signBendahara: ""
+    nameBendahara: "H. Mulyadi, S.E."
 };
 
 const DEFAULT_TRANSACTIONS = [
@@ -295,7 +287,7 @@ function initializeUI() {
     const today = new Date();
     const formattedDate = today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     document.getElementById("printDate").innerText = `Dicetak pada: ${formattedDate}`;
-    document.getElementById("printSignDate").innerText = `${settings.city || "Bekasi"}, ${formattedDate}`;
+    document.getElementById("printSignDate").innerText = `Bandung, ${formattedDate}`;
 
     // Fill Settings inputs
     document.getElementById("cfgMasjidName").value = settings.masjidName;
@@ -1929,7 +1921,7 @@ window.addEventListener("beforeprint", () => {
     const today = new Date();
     const formattedDate = today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
     document.getElementById("printDate").innerText = `Dicetak pada: ${formattedDate}`;
-    document.getElementById("printSignDate").innerText = `${settings.city || "Bekasi"}, ${formattedDate}`;
+    document.getElementById("printSignDate").innerText = `Bandung, ${formattedDate}`;
     
     // Choose active list
     const activeList = currentKasTab === "utama" ? filteredTransactionsGlobalUtama : filteredTransactionsGlobalKhusus;
