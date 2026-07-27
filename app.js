@@ -67,6 +67,9 @@ let activeKhususCategory = null; // Menyimpan nama kategori kas khusus yang seda
 
 // Upload Image State
 let tempSelectedImageBase64 = null; // Menyimpan Base64 gambar struk sementara saat input form
+let tempLogoBase64 = null;          // Menyimpan Base64 logo DKM sementara
+let tempSignKetuaBase64 = null;     // Menyimpan Base64 tanda tangan ketua sementara
+let tempSignBendaharaBase64 = null; // Menyimpan Base64 tanda tangan bendahara sementara
 let activeDetailTxId = null; // ID transaksi yang sedang dibuka detail modallnya
 
 // Database Connection Info
@@ -104,9 +107,140 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     // 6. Setup Image Upload Listener
     setupImageUploadListener();
+    setupSettingsImageUploadListeners();
 
     initIcons();
 });
+
+// --- CUSTOM ALERT TOAST SYSTEM ---
+window.showAlert = function(message, type = "success") {
+    const container = document.getElementById("alertContainer");
+    if (!container) return;
+
+    let alertClass = "alert-success bg-emerald-600 text-white";
+    let iconName = "check-circle";
+    if (type === "error") {
+        alertClass = "alert-error text-white bg-red-600";
+        iconName = "alert-triangle";
+    } else if (type === "info") {
+        alertClass = "alert-info text-white bg-blue-600";
+        iconName = "info";
+    } else if (type === "warning") {
+        alertClass = "alert-warning text-slate-800 bg-amber-500";
+        iconName = "alert-circle";
+    }
+
+    const alertDiv = document.createElement("div");
+    alertDiv.className = `alert ${alertClass} shadow-lg flex items-center gap-2 rounded-xl py-3 px-4 transition-all duration-300 transform translate-y-2 opacity-0`;
+    alertDiv.innerHTML = `
+        <i data-lucide="${iconName}" class="w-5 h-5 flex-shrink-0"></i>
+        <span class="text-xs font-semibold">${message}</span>
+    `;
+
+    container.appendChild(alertDiv);
+    
+    if (window.lucide) {
+        lucide.createIcons();
+    }
+
+    setTimeout(() => {
+        alertDiv.classList.remove("translate-y-2", "opacity-0");
+    }, 10);
+
+    setTimeout(() => {
+        alertDiv.classList.add("translate-y-2", "opacity-0");
+        setTimeout(() => {
+            alertDiv.remove();
+        }, 300);
+    }, 3000);
+};
+
+// --- SETTINGS IMAGE UPLOAD LOGIC ---
+function setupSettingsImageUploadListeners() {
+    const logoInput = document.getElementById("cfgLogoInput");
+    if (logoInput) {
+        logoInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 1.5 * 1024 * 1024) {
+                    showAlert("Ukuran logo terlalu besar! Maksimal 1.5 MB.", "error");
+                    logoInput.value = "";
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    tempLogoBase64 = evt.target.result;
+                    document.getElementById("cfgLogoPreview").src = tempLogoBase64;
+                    document.getElementById("cfgLogoPreviewContainer").classList.remove("hidden");
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    const signKetuaInput = document.getElementById("cfgSignKetuaInput");
+    if (signKetuaInput) {
+        signKetuaInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 1.5 * 1024 * 1024) {
+                    showAlert("Ukuran tanda tangan terlalu besar! Maksimal 1.5 MB.", "error");
+                    signKetuaInput.value = "";
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    tempSignKetuaBase64 = evt.target.result;
+                    document.getElementById("cfgSignKetuaPreview").src = tempSignKetuaBase64;
+                    document.getElementById("cfgSignKetuaPreviewContainer").classList.remove("hidden");
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    const signBendaharaInput = document.getElementById("cfgSignBendaharaInput");
+    if (signBendaharaInput) {
+        signBendaharaInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 1.5 * 1024 * 1024) {
+                    showAlert("Ukuran tanda tangan terlalu besar! Maksimal 1.5 MB.", "error");
+                    signBendaharaInput.value = "";
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    tempSignBendaharaBase64 = evt.target.result;
+                    document.getElementById("cfgSignBendaharaPreview").src = tempSignBendaharaBase64;
+                    document.getElementById("cfgSignBendaharaPreviewContainer").classList.remove("hidden");
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+}
+
+window.clearCfgLogoSelection = function() {
+    tempLogoBase64 = "";
+    document.getElementById("cfgLogoInput").value = "";
+    document.getElementById("cfgLogoPreview").src = "";
+    document.getElementById("cfgLogoPreviewContainer").classList.add("hidden");
+};
+
+window.clearCfgSignKetuaSelection = function() {
+    tempSignKetuaBase64 = "";
+    document.getElementById("cfgSignKetuaInput").value = "";
+    document.getElementById("cfgSignKetuaPreview").src = "";
+    document.getElementById("cfgSignKetuaPreviewContainer").classList.add("hidden");
+};
+
+window.clearCfgSignBendaharaSelection = function() {
+    tempSignBendaharaBase64 = "";
+    document.getElementById("cfgSignBendaharaInput").value = "";
+    document.getElementById("cfgSignBendaharaPreview").src = "";
+    document.getElementById("cfgSignBendaharaPreviewContainer").classList.add("hidden");
+};
 
 // Set state depending on config keys presence
 function initializeFirebaseConnection() {
@@ -298,17 +432,81 @@ function initializeUI() {
     document.getElementById("printSignDate").innerText = `${settings.city || "Bekasi"}, ${formattedDate}`;
 
     // Fill Settings inputs
-    document.getElementById("cfgMasjidName").value = settings.masjidName;
-    document.getElementById("cfgTitleKetua").value = settings.titleKetua;
-    document.getElementById("cfgNameKetua").value = settings.nameKetua;
-    document.getElementById("cfgTitleBendahara").value = settings.titleBendahara;
-    document.getElementById("cfgNameBendahara").value = settings.nameBendahara;
+    if (document.getElementById("cfgMasjidName")) document.getElementById("cfgMasjidName").value = settings.masjidName || "";
+    if (document.getElementById("cfgCity")) document.getElementById("cfgCity").value = settings.city || "Bekasi";
+    if (document.getElementById("cfgAddress")) document.getElementById("cfgAddress").value = settings.address || "";
+    if (document.getElementById("cfgTitleKetua")) document.getElementById("cfgTitleKetua").value = settings.titleKetua || "";
+    if (document.getElementById("cfgNameKetua")) document.getElementById("cfgNameKetua").value = settings.nameKetua || "";
+    if (document.getElementById("cfgTitleBendahara")) document.getElementById("cfgTitleBendahara").value = settings.titleBendahara || "";
+    if (document.getElementById("cfgNameBendahara")) document.getElementById("cfgNameBendahara").value = settings.nameBendahara || "";
 
-    // Fill Signatures in Print template
-    document.getElementById("printTitleKetua").innerText = settings.titleKetua;
-    document.getElementById("printNameKetua").innerText = settings.nameKetua;
-    document.getElementById("printTitleBendahara").innerText = settings.titleBendahara;
-    document.getElementById("printNameBendahara").innerText = settings.nameBendahara;
+    // Fill Signatures and Logo in Print template
+    if (document.getElementById("printTitleKetua")) document.getElementById("printTitleKetua").innerText = settings.titleKetua || "";
+    if (document.getElementById("printNameKetua")) document.getElementById("printNameKetua").innerText = settings.nameKetua ? `( ${settings.nameKetua} )` : "( _______________________ )";
+    if (document.getElementById("printTitleBendahara")) document.getElementById("printTitleBendahara").innerText = settings.titleBendahara || "";
+    if (document.getElementById("printNameBendahara")) document.getElementById("printNameBendahara").innerText = settings.nameBendahara ? `( ${settings.nameBendahara} )` : "( _______________________ )";
+
+    const printLogo = document.getElementById("printLogo");
+    const printLogoContainer = document.getElementById("printLogoContainer");
+    const printLogoPlaceholder = document.getElementById("printLogoPlaceholder");
+    
+    if (settings.logo) {
+        if (printLogo) {
+            printLogo.src = settings.logo;
+            printLogo.classList.remove("hidden");
+        }
+        if (printLogoContainer) printLogoContainer.classList.remove("hidden");
+        if (printLogoPlaceholder) printLogoPlaceholder.classList.remove("hidden");
+    } else {
+        if (printLogo) {
+            printLogo.src = "";
+            printLogo.classList.add("hidden");
+        }
+        if (printLogoContainer) printLogoContainer.classList.add("hidden");
+        if (printLogoPlaceholder) printLogoPlaceholder.classList.add("hidden");
+    }
+
+    const printMasjidAddress = document.getElementById("printMasjidAddress");
+    if (printMasjidAddress) {
+        printMasjidAddress.innerText = settings.address || "";
+        if (!settings.address) {
+            printMasjidAddress.classList.add("hidden");
+        } else {
+            printMasjidAddress.classList.remove("hidden");
+        }
+    }
+
+    const printSignKetua = document.getElementById("printSignKetua");
+    const printSignKetuaSpace = document.getElementById("printSignKetuaSpace");
+    if (settings.signKetua) {
+        if (printSignKetua) {
+            printSignKetua.src = settings.signKetua;
+            printSignKetua.classList.remove("hidden");
+        }
+        if (printSignKetuaSpace) printSignKetuaSpace.classList.add("hidden");
+    } else {
+        if (printSignKetua) {
+            printSignKetua.src = "";
+            printSignKetua.classList.add("hidden");
+        }
+        if (printSignKetuaSpace) printSignKetuaSpace.classList.remove("hidden");
+    }
+
+    const printSignBendahara = document.getElementById("printSignBendahara");
+    const printSignBendaharaSpace = document.getElementById("printSignBendaharaSpace");
+    if (settings.signBendahara) {
+        if (printSignBendahara) {
+            printSignBendahara.src = settings.signBendahara;
+            printSignBendahara.classList.remove("hidden");
+        }
+        if (printSignBendaharaSpace) printSignBendaharaSpace.classList.add("hidden");
+    } else {
+        if (printSignBendahara) {
+            printSignBendahara.src = "";
+            printSignBendahara.classList.add("hidden");
+        }
+        if (printSignBendaharaSpace) printSignBendaharaSpace.classList.remove("hidden");
+    }
 
     // Populate Category selectors
     populateCategoryDropdowns();
@@ -1613,7 +1811,59 @@ window.openSettingsModal = function() {
     if (!isAdmin) return;
     switchTab('settings-general');
     renderSettingsCategories();
+
+    // Populate general inputs
+    if (document.getElementById("cfgMasjidName")) document.getElementById("cfgMasjidName").value = settings.masjidName || "";
+    if (document.getElementById("cfgCity")) document.getElementById("cfgCity").value = settings.city || "";
+    if (document.getElementById("cfgAddress")) document.getElementById("cfgAddress").value = settings.address || "";
+    if (document.getElementById("cfgTitleKetua")) document.getElementById("cfgTitleKetua").value = settings.titleKetua || "";
+    if (document.getElementById("cfgNameKetua")) document.getElementById("cfgNameKetua").value = settings.nameKetua || "";
+    if (document.getElementById("cfgTitleBendahara")) document.getElementById("cfgTitleBendahara").value = settings.titleBendahara || "";
+    if (document.getElementById("cfgNameBendahara")) document.getElementById("cfgNameBendahara").value = settings.nameBendahara || "";
+
+    // Reset temporary image base64s from settings
+    tempLogoBase64 = settings.logo || "";
+    tempSignKetuaBase64 = settings.signKetua || "";
+    tempSignBendaharaBase64 = settings.signBendahara || "";
+
+    // Setup previews
+    const logoPreview = document.getElementById("cfgLogoPreview");
+    const logoPreviewContainer = document.getElementById("cfgLogoPreviewContainer");
+    if (tempLogoBase64) {
+        if (logoPreview) logoPreview.src = tempLogoBase64;
+        if (logoPreviewContainer) logoPreviewContainer.classList.remove("hidden");
+    } else {
+        if (logoPreview) logoPreview.src = "";
+        if (logoPreviewContainer) logoPreviewContainer.classList.add("hidden");
+    }
+
+    const signKetuaPreview = document.getElementById("cfgSignKetuaPreview");
+    const signKetuaPreviewContainer = document.getElementById("cfgSignKetuaPreviewContainer");
+    if (tempSignKetuaBase64) {
+        if (signKetuaPreview) signKetuaPreview.src = tempSignKetuaBase64;
+        if (signKetuaPreviewContainer) signKetuaPreviewContainer.classList.remove("hidden");
+    } else {
+        if (signKetuaPreview) signKetuaPreview.src = "";
+        if (signKetuaPreviewContainer) signKetuaPreviewContainer.classList.add("hidden");
+    }
+
+    const signBendaharaPreview = document.getElementById("cfgSignBendaharaPreview");
+    const signBendaharaPreviewContainer = document.getElementById("cfgSignBendaharaPreviewContainer");
+    if (tempSignBendaharaBase64) {
+        if (signBendaharaPreview) signBendaharaPreview.src = tempSignBendaharaBase64;
+        if (signBendaharaPreviewContainer) signBendaharaPreviewContainer.classList.remove("hidden");
+    } else {
+        if (signBendaharaPreview) signBendaharaPreview.src = "";
+        if (signBendaharaPreviewContainer) signBendaharaPreviewContainer.classList.add("hidden");
+    }
+
+    // Reset file inputs
+    if (document.getElementById("cfgLogoInput")) document.getElementById("cfgLogoInput").value = "";
+    if (document.getElementById("cfgSignKetuaInput")) document.getElementById("cfgSignKetuaInput").value = "";
+    if (document.getElementById("cfgSignBendaharaInput")) document.getElementById("cfgSignBendaharaInput").value = "";
+
     document.getElementById("settingsModal").showModal();
+    initIcons();
 };
 
 window.closeSettingsModal = function() {
@@ -1646,10 +1896,14 @@ window.saveSettings = async function() {
         ...settings,
         masjidName: document.getElementById("cfgMasjidName").value.trim() || settings.masjidName,
         city: document.getElementById("cfgCity") ? document.getElementById("cfgCity").value.trim() : (settings.city || "Bekasi"),
+        address: document.getElementById("cfgAddress") ? document.getElementById("cfgAddress").value.trim() : (settings.address || ""),
         titleKetua: document.getElementById("cfgTitleKetua").value.trim() || settings.titleKetua,
         nameKetua: document.getElementById("cfgNameKetua").value.trim() || settings.nameKetua,
         titleBendahara: document.getElementById("cfgTitleBendahara").value.trim() || settings.titleBendahara,
-        nameBendahara: document.getElementById("cfgNameBendahara").value.trim() || settings.nameBendahara
+        nameBendahara: document.getElementById("cfgNameBendahara").value.trim() || settings.nameBendahara,
+        logo: tempLogoBase64 || "",
+        signKetua: tempSignKetuaBase64 || "",
+        signBendahara: tempSignBendaharaBase64 || ""
     };
 
     await syncData();
