@@ -243,7 +243,7 @@
                     <div class="divider my-1"></div>
 
                     <!-- Filters -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
                         <!-- Search Input -->
                         <div class="form-control w-full">
                             <label class="label py-1 text-xs font-semibold text-gray-500 uppercase">Cari Keterangan</label>
@@ -255,7 +255,7 @@
 
                         <!-- Category Filter -->
                         <div class="form-control w-full">
-                            <label class="label py-1 text-xs font-semibold text-gray-500 uppercase">Filter Kategori Kas</label>
+                            <label class="label py-1 text-xs font-semibold text-gray-500 uppercase">Filter Kategori</label>
                             <select id="filterCategoryUtama" onchange="applyFilters()" class="select select-bordered w-full text-sm focus:outline-primary">
                                 <option value="">Semua Kategori</option>
                             </select>
@@ -287,6 +287,18 @@
                             <select id="filterYearUtama" onchange="applyFilters()" class="select select-bordered w-full text-sm focus:outline-primary">
                                 <option value="">Semua Tahun</option>
                             </select>
+                        </div>
+
+                        <!-- Start Date Filter -->
+                        <div class="form-control w-full">
+                            <label class="label py-1 text-xs font-semibold text-gray-500 uppercase">Mulai Tanggal</label>
+                            <input type="date" id="filterStartDateUtama" onchange="applyFilters()" class="input input-bordered w-full text-sm focus:outline-primary" />
+                        </div>
+
+                        <!-- End Date Filter -->
+                        <div class="form-control w-full">
+                            <label class="label py-1 text-xs font-semibold text-gray-500 uppercase">Sampai Tanggal</label>
+                            <input type="date" id="filterEndDateUtama" onchange="applyFilters()" class="input input-bordered w-full text-sm focus:outline-primary" />
                         </div>
                     </div>
                 </div>
@@ -436,7 +448,7 @@
             <!-- LOCAL CONTROLS / FILTERS (No-Print) -->
             <section class="card bg-white shadow-xl no-print">
                 <div class="card-body p-5">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                         <!-- Search Input -->
                         <div class="form-control w-full">
                             <label class="label py-1 text-xs font-semibold text-gray-500 uppercase">Cari Keterangan</label>
@@ -472,6 +484,18 @@
                             <select id="filterYearKhusus" onchange="applyFiltersKhusus()" class="select select-bordered w-full text-sm focus:outline-primary">
                                 <option value="">Semua Tahun</option>
                             </select>
+                        </div>
+
+                        <!-- Start Date Filter -->
+                        <div class="form-control w-full">
+                            <label class="label py-1 text-xs font-semibold text-gray-500 uppercase">Mulai Tanggal</label>
+                            <input type="date" id="filterStartDateKhusus" onchange="applyFiltersKhusus()" class="input input-bordered w-full text-sm focus:outline-primary" />
+                        </div>
+
+                        <!-- End Date Filter -->
+                        <div class="form-control w-full">
+                            <label class="label py-1 text-xs font-semibold text-gray-500 uppercase">Sampai Tanggal</label>
+                            <input type="date" id="filterEndDateKhusus" onchange="applyFiltersKhusus()" class="input input-bordered w-full text-sm focus:outline-primary" />
                         </div>
                     </div>
                 </div>
@@ -567,22 +591,22 @@
         <!-- PRINT SIGNATURE SECTION (Only visible when printing) -->
         <section class="hidden print-only mt-12 grid grid-cols-2 gap-8 text-center text-xs text-black">
             <div class="flex flex-col items-center">
-                <p>Mengetahui,</p>
-                <p class="font-bold mt-1" id="printTitleKetua">Ketua DKM Masjid</p>
-                <div class="h-16 flex items-center justify-center my-1">
-                    <img id="printSignKetua" src="" class="max-h-16 object-contain hidden" />
-                    <div id="printSignKetuaSpace" class="h-16"></div>
-                </div>
-                <p class="font-bold decoration-dotted underline" id="printNameKetua">( _______________________ )</p>
-            </div>
-            <div class="flex flex-col items-center">
-                <p id="printSignDate">Bandung, Sunday, July 19, 2026</p>
+                <p>&nbsp;</p>
                 <p class="font-bold mt-1" id="printTitleBendahara">Bendahara DKM</p>
                 <div class="h-16 flex items-center justify-center my-1">
                     <img id="printSignBendahara" src="" class="max-h-16 object-contain hidden" />
                     <div id="printSignBendaharaSpace" class="h-16"></div>
                 </div>
                 <p class="font-bold decoration-dotted underline" id="printNameBendahara">( _______________________ )</p>
+            </div>
+            <div class="flex flex-col items-center">
+                <p id="printSignDate">Bandung, Sunday, July 19, 2026</p>
+                <p class="font-bold mt-1" id="printTitleKetua">Ketua DKM Masjid</p>
+                <div class="h-16 flex items-center justify-center my-1">
+                    <img id="printSignKetua" src="" class="max-h-16 object-contain hidden" />
+                    <div id="printSignKetuaSpace" class="h-16"></div>
+                </div>
+                <p class="font-bold decoration-dotted underline" id="printNameKetua">( _______________________ )</p>
             </div>
         </section>
 

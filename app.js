@@ -989,6 +989,8 @@ window.applyFilters = function() {
     const catQuery = document.getElementById("filterCategoryUtama").value;
     const monthQuery = document.getElementById("filterMonthUtama").value;
     const yearQuery = document.getElementById("filterYearUtama").value;
+    const startDateQuery = document.getElementById("filterStartDateUtama") ? document.getElementById("filterStartDateUtama").value : "";
+    const endDateQuery = document.getElementById("filterEndDateUtama") ? document.getElementById("filterEndDateUtama").value : "";
 
     // Load only 'utama' categories names
     const tabCategories = categories.filter(c => c.type === "utama").map(c => c.name);
@@ -1016,7 +1018,14 @@ window.applyFilters = function() {
             matchDate = matchMonth && matchYear;
         }
 
-        return matchSearch && matchCat && matchDate;
+        // Date range filter
+        let matchRange = true;
+        if (tx.date) {
+            if (startDateQuery && tx.date < startDateQuery) matchRange = false;
+            if (endDateQuery && tx.date > endDateQuery) matchRange = false;
+        }
+
+        return matchSearch && matchCat && matchDate && matchRange;
     });
 
     filteredTransactionsGlobalUtama.sort((a, b) => {
@@ -1094,9 +1103,15 @@ function renderKPIsUtama() {
     const monthQuery = document.getElementById("filterMonthUtama").value;
     const yearQuery = document.getElementById("filterYearUtama").value;
     const catQuery = document.getElementById("filterCategoryUtama").value;
+    const startDateQuery = document.getElementById("filterStartDateUtama") ? document.getElementById("filterStartDateUtama").value : "";
+    const endDateQuery = document.getElementById("filterEndDateUtama") ? document.getElementById("filterEndDateUtama").value : "";
 
     let periodStr = "Periode: ";
-    if (monthQuery || yearQuery) {
+    if (startDateQuery || endDateQuery) {
+        const startLabel = startDateQuery ? new Date(startDateQuery).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "...";
+        const endLabel = endDateQuery ? new Date(endDateQuery).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "...";
+        periodStr += `${startLabel} s.d. ${endLabel}`;
+    } else if (monthQuery || yearQuery) {
         const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         const mLabel = monthQuery ? monthNames[parseInt(monthQuery) - 1] : "";
         const yLabel = yearQuery ? yearQuery : "Semua Tahun";
@@ -1414,6 +1429,8 @@ window.applyFiltersKhusus = function() {
     const searchQuery = document.getElementById("filterSearchKhusus").value.toLowerCase().trim();
     const monthQuery = document.getElementById("filterMonthKhusus").value;
     const yearQuery = document.getElementById("filterYearKhusus").value;
+    const startDateQuery = document.getElementById("filterStartDateKhusus") ? document.getElementById("filterStartDateKhusus").value : "";
+    const endDateQuery = document.getElementById("filterEndDateKhusus") ? document.getElementById("filterEndDateKhusus").value : "";
 
     filteredTransactionsGlobalKhusus = transactions.filter(tx => {
         // Must match active category exactly
@@ -1434,7 +1451,14 @@ window.applyFiltersKhusus = function() {
             matchDate = matchMonth && matchYear;
         }
 
-        return matchSearch && matchDate;
+        // Date range filter
+        let matchRange = true;
+        if (tx.date) {
+            if (startDateQuery && tx.date < startDateQuery) matchRange = false;
+            if (endDateQuery && tx.date > endDateQuery) matchRange = false;
+        }
+
+        return matchSearch && matchDate && matchRange;
     });
 
     filteredTransactionsGlobalKhusus.sort((a, b) => {
@@ -1508,9 +1532,15 @@ function renderKPIsKhusus() {
 
     const monthQuery = document.getElementById("filterMonthKhusus").value;
     const yearQuery = document.getElementById("filterYearKhusus").value;
+    const startDateQuery = document.getElementById("filterStartDateKhusus") ? document.getElementById("filterStartDateKhusus").value : "";
+    const endDateQuery = document.getElementById("filterEndDateKhusus") ? document.getElementById("filterEndDateKhusus").value : "";
 
     let periodStr = "Periode: ";
-    if (monthQuery || yearQuery) {
+    if (startDateQuery || endDateQuery) {
+        const startLabel = startDateQuery ? new Date(startDateQuery).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "...";
+        const endLabel = endDateQuery ? new Date(endDateQuery).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : "...";
+        periodStr += `${startLabel} s.d. ${endLabel}`;
+    } else if (monthQuery || yearQuery) {
         const monthNames = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
         const mLabel = monthQuery ? monthNames[parseInt(monthQuery) - 1] : "";
         const yLabel = yearQuery ? yearQuery : "Semua Tahun";
