@@ -32,6 +32,12 @@
             .print-only {
                 display: block !important;
             }
+            .print-only.grid {
+                display: grid !important;
+            }
+            .print-only.flex {
+                display: flex !important;
+            }
             .print-container {
                 width: 100% !important;
                 max-width: 100% !important;
@@ -592,21 +598,21 @@
         <section class="hidden print-only mt-12 grid grid-cols-2 gap-8 text-center text-xs text-black">
             <div class="flex flex-col items-center">
                 <p>&nbsp;</p>
-                <p class="font-bold mt-1" id="printTitleBendahara">Bendahara DKM</p>
-                <div class="h-16 flex items-center justify-center my-1">
-                    <img id="printSignBendahara" src="" class="max-h-16 object-contain hidden" />
-                    <div id="printSignBendaharaSpace" class="h-16"></div>
-                </div>
-                <p class="font-bold decoration-dotted underline" id="printNameBendahara">( _______________________ )</p>
-            </div>
-            <div class="flex flex-col items-center">
-                <p id="printSignDate">Bandung, Sunday, July 19, 2026</p>
                 <p class="font-bold mt-1" id="printTitleKetua">Ketua DKM Masjid</p>
                 <div class="h-16 flex items-center justify-center my-1">
                     <img id="printSignKetua" src="" class="max-h-16 object-contain hidden" />
                     <div id="printSignKetuaSpace" class="h-16"></div>
                 </div>
                 <p class="font-bold decoration-dotted underline" id="printNameKetua">( _______________________ )</p>
+            </div>
+            <div class="flex flex-col items-center">
+                <p id="printSignDate">Bandung, Sunday, July 19, 2026</p>
+                <p class="font-bold mt-1" id="printTitleBendahara">Bendahara DKM</p>
+                <div class="h-16 flex items-center justify-center my-1">
+                    <img id="printSignBendahara" src="" class="max-h-16 object-contain hidden" />
+                    <div id="printSignBendaharaSpace" class="h-16"></div>
+                </div>
+                <p class="font-bold decoration-dotted underline" id="printNameBendahara">( _______________________ )</p>
             </div>
         </section>
 
