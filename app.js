@@ -41,6 +41,7 @@ const DEFAULT_SETTINGS = {
     titleBendahara: "Bendahara DKM",
     nameBendahara: "H. Mulyadi, S.E.",
     logo: "",
+    stamp: "",
     signKetua: "",
     signBendahara: ""
 };
@@ -68,6 +69,7 @@ let activeKhususCategory = null; // Menyimpan nama kategori kas khusus yang seda
 // Upload Image State
 let tempSelectedImageBase64 = null; // Menyimpan Base64 gambar struk sementara saat input form
 let tempLogoBase64 = null;          // Menyimpan Base64 logo DKM sementara
+let tempStampBase64 = null;         // Menyimpan Base64 stempel DKM sementara
 let tempSignKetuaBase64 = null;     // Menyimpan Base64 tanda tangan ketua sementara
 let tempSignBendaharaBase64 = null; // Menyimpan Base64 tanda tangan bendahara sementara
 let activeDetailTxId = null; // ID transaksi yang sedang dibuka detail modallnya
@@ -178,6 +180,27 @@ function setupSettingsImageUploadListeners() {
         });
     }
 
+    const stampInput = document.getElementById("cfgStampInput");
+    if (stampInput) {
+        stampInput.addEventListener("change", (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                if (file.size > 1.5 * 1024 * 1024) {
+                    showAlert("Ukuran stempel terlalu besar! Maksimal 1.5 MB.", "error");
+                    stampInput.value = "";
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                    tempStampBase64 = evt.target.result;
+                    document.getElementById("cfgStampPreview").src = tempStampBase64;
+                    document.getElementById("cfgStampPreviewContainer").classList.remove("hidden");
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
     const signKetuaInput = document.getElementById("cfgSignKetuaInput");
     if (signKetuaInput) {
         signKetuaInput.addEventListener("change", (e) => {
@@ -226,6 +249,13 @@ window.clearCfgLogoSelection = function() {
     document.getElementById("cfgLogoInput").value = "";
     document.getElementById("cfgLogoPreview").src = "";
     document.getElementById("cfgLogoPreviewContainer").classList.add("hidden");
+};
+
+window.clearCfgStampSelection = function() {
+    tempStampBase64 = "";
+    document.getElementById("cfgStampInput").value = "";
+    document.getElementById("cfgStampPreview").src = "";
+    document.getElementById("cfgStampPreviewContainer").classList.add("hidden");
 };
 
 window.clearCfgSignKetuaSelection = function() {
@@ -490,6 +520,19 @@ function initializeUI() {
             printSignKetua.classList.add("hidden");
         }
         if (printSignKetuaSpace) printSignKetuaSpace.classList.remove("hidden");
+    }
+
+    const printStamp = document.getElementById("printStamp");
+    if (settings.stamp) {
+        if (printStamp) {
+            printStamp.src = settings.stamp;
+            printStamp.classList.remove("hidden");
+        }
+    } else {
+        if (printStamp) {
+            printStamp.src = "";
+            printStamp.classList.add("hidden");
+        }
     }
 
     const printSignBendahara = document.getElementById("printSignBendahara");
@@ -1853,6 +1896,7 @@ window.openSettingsModal = function() {
 
     // Reset temporary image base64s from settings
     tempLogoBase64 = settings.logo || "";
+    tempStampBase64 = settings.stamp || "";
     tempSignKetuaBase64 = settings.signKetua || "";
     tempSignBendaharaBase64 = settings.signBendahara || "";
 
@@ -1865,6 +1909,16 @@ window.openSettingsModal = function() {
     } else {
         if (logoPreview) logoPreview.src = "";
         if (logoPreviewContainer) logoPreviewContainer.classList.add("hidden");
+    }
+
+    const stampPreview = document.getElementById("cfgStampPreview");
+    const stampPreviewContainer = document.getElementById("cfgStampPreviewContainer");
+    if (tempStampBase64) {
+        if (stampPreview) stampPreview.src = tempStampBase64;
+        if (stampPreviewContainer) stampPreviewContainer.classList.remove("hidden");
+    } else {
+        if (stampPreview) stampPreview.src = "";
+        if (stampPreviewContainer) stampPreviewContainer.classList.add("hidden");
     }
 
     const signKetuaPreview = document.getElementById("cfgSignKetuaPreview");
@@ -1889,6 +1943,7 @@ window.openSettingsModal = function() {
 
     // Reset file inputs
     if (document.getElementById("cfgLogoInput")) document.getElementById("cfgLogoInput").value = "";
+    if (document.getElementById("cfgStampInput")) document.getElementById("cfgStampInput").value = "";
     if (document.getElementById("cfgSignKetuaInput")) document.getElementById("cfgSignKetuaInput").value = "";
     if (document.getElementById("cfgSignBendaharaInput")) document.getElementById("cfgSignBendaharaInput").value = "";
 
@@ -1932,6 +1987,7 @@ window.saveSettings = async function() {
         titleBendahara: document.getElementById("cfgTitleBendahara").value.trim() || settings.titleBendahara,
         nameBendahara: document.getElementById("cfgNameBendahara").value.trim() || settings.nameBendahara,
         logo: tempLogoBase64 || "",
+        stamp: tempStampBase64 || "",
         signKetua: tempSignKetuaBase64 || "",
         signBendahara: tempSignBendaharaBase64 || ""
     };
